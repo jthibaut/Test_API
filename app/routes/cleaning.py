@@ -1,14 +1,15 @@
-from fastapi import APIRouter, UploadFile, File
+# app/cleaning.py
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from io import BytesIO
 
-router = APIRouter()
-
-@router.post("/clean")
-async def clean_data(file: UploadFile = File(...)):
-    contents = await file.read()
-    df = pd.read_csv(BytesIO(contents))
+def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Nettoie un DataFrame Pandas :
+    1. Supprime les doublons
+    2. Remplace les NaN numériques par la moyenne
+    3. Normalise les colonnes numériques
+    """
+    df = df.copy()
 
     # Nettoyage
     df.drop_duplicates(inplace=True)
@@ -16,7 +17,8 @@ async def clean_data(file: UploadFile = File(...)):
 
     # Normalisation
     num_cols = df.select_dtypes(include='number').columns
-    scaler = StandardScaler()
-    df[num_cols] = scaler.fit_transform(df[num_cols])
+    if not df[num_cols].empty:
+        scaler = StandardScaler()
+        df[num_cols] = scaler.fit_transform(df[num_cols])
 
-    return df.to_json(orient="records")
+    return df
